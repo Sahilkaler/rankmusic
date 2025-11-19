@@ -1,3 +1,7 @@
+// ---------------------------------------------------------
+// TYPES
+// ---------------------------------------------------------
+
 interface SpotifyTokenResponse {
   access_token: string
   token_type: string
@@ -19,10 +23,14 @@ interface SpotifySearchResponse {
   }
 }
 
+// Cache token for reuse
 let cachedToken: { token: string; expiresAt: number } | null = null
 
+// ---------------------------------------------------------
+// GET ACCESS TOKEN (Vercel-safe, NO Buffer)
+// ---------------------------------------------------------
+
 async function getSpotifyAccessToken(): Promise<string> {
-  // Check if we have a valid cached token
   if (cachedToken && Date.now() < cachedToken.expiresAt) {
     return cachedToken.token
   }
@@ -34,24 +42,27 @@ async function getSpotifyAccessToken(): Promise<string> {
     throw new Error("Spotify credentials not configured")
   }
 
+  // Use btoa() (safe in Vercel Edge Runtime)
+  const encodedCredentials = btoa(`${clientId}:${clientSecret}`)
+
   const response = await fetch("https://accounts.spotify.com/api/token", {
     method: "POST",
     headers: {
       "Content-Type": "application/x-www-form-urlencoded",
-      Authorization: `Basic ${Buffer.from(`${clientId}:${clientSecret}`).toString("base64")}`,
+      Authorization: `Basic ${encodedCredentials}`,
     },
-    body: new URLSearchParams({
-      grant_type: "client_credentials",
-    }),
+    body: "grant_type=client_credentials",
+    cache: "no-store",
   })
 
   if (!response.ok) {
+    const errorText = await response.text()
+    console.error("Spotify token error:", errorText)
     throw new Error("Failed to get Spotify access token")
   }
 
   const data: SpotifyTokenResponse = await response.json()
-  
-  // Cache the token (expires 1 minute before actual expiry for safety)
+
   cachedToken = {
     token: data.access_token,
     expiresAt: Date.now() + (data.expires_in - 60) * 1000,
@@ -59,6 +70,10 @@ async function getSpotifyAccessToken(): Promise<string> {
 
   return data.access_token
 }
+
+// ---------------------------------------------------------
+// SEARCH ALBUMS
+// ---------------------------------------------------------
 
 export async function searchSpotifyAlbums(query: string, limit: number = 20) {
   const token = await getSpotifyAccessToken()
@@ -69,23 +84,31 @@ export async function searchSpotifyAlbums(query: string, limit: number = 20) {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      cache: "no-store",
     }
   )
 
   if (!response.ok) {
+    const text = await response.text()
+    console.error("Spotify search error:", text)
     throw new Error("Failed to search Spotify")
   }
 
   const data: SpotifySearchResponse = await response.json()
+
   return data.albums.items.map((album) => ({
     spotifyId: album.id,
     title: album.name,
     artist: album.artists.map((a) => a.name).join(", "),
     releaseDate: album.release_date,
     coverUrl: album.images[0]?.url || null,
-    genres: album.genres || [],
+    genres: [], // Search API does not provide genres
   }))
 }
+
+// ---------------------------------------------------------
+// GET FULL ALBUM DATA (includes genres)
+// ---------------------------------------------------------
 
 export async function getSpotifyAlbum(spotifyId: string) {
   const token = await getSpotifyAccessToken()
@@ -94,9 +117,12 @@ export async function getSpotifyAlbum(spotifyId: string) {
     headers: {
       Authorization: `Bearer ${token}`,
     },
+    cache: "no-store",
   })
 
   if (!response.ok) {
+    const msg = await response.text()
+    console.error("Spotify album fetch error:", msg)
     throw new Error("Failed to fetch album from Spotify")
   }
 
@@ -112,6 +138,10 @@ export async function getSpotifyAlbum(spotifyId: string) {
   }
 }
 
+// ---------------------------------------------------------
+// GET NEW RELEASES
+// ---------------------------------------------------------
+
 export async function getNewReleases(limit: number = 50) {
   const token = await getSpotifyAccessToken()
 
@@ -121,22 +151,24 @@ export async function getNewReleases(limit: number = 50) {
       headers: {
         Authorization: `Bearer ${token}`,
       },
+      cache: "no-store",
     }
   )
 
   if (!response.ok) {
+    const msg = await response.text()
+    console.error("Spotify new releases error:", msg)
     throw new Error("Failed to fetch new releases from Spotify")
   }
 
   const data = await response.json()
+
   return data.albums.items.map((album: SpotifyAlbum) => ({
     spotifyId: album.id,
     title: album.name,
-    artist: album.artists.map((a: { name: string }) => a.name).join(", "),
+    artist: album.artists.map((a) => a.name).join(", "),
     releaseDate: album.release_date,
     coverUrl: album.images[0]?.url || null,
-    genres: album.genres || [],
+    genres: [], // Spotify new releases API also does NOT include genres
   }))
 }
-
-

@@ -2,6 +2,15 @@ import { getNewReleases, getSpotifyAlbum } from "./spotify"
 import { prisma } from "./prisma"
 import { ensureAlbumsArtwork } from "./album-service"
 
+interface SpotifyAlbumData {
+  spotifyId: string
+  title: string
+  artist: string
+  releaseDate: string
+  coverUrl: string
+  genres?: string[]
+}
+
 interface GenreReleases {
   genre: string
   albums: any[]
@@ -29,11 +38,11 @@ const POPULAR_GENRES = [
 export async function getNewReleasesByGenre(): Promise<GenreReleases[]> {
   try {
     // Fetch new releases from Spotify
-    const newReleases = await getNewReleases(50)
+    const newReleases: SpotifyAlbumData[] = await getNewReleases(50)
 
     // Upsert albums into database
     const albums = await Promise.all(
-      newReleases.map(async (albumData) => {
+      newReleases.map(async (albumData: SpotifyAlbumData) => {
         // Upsert album
         const album = await prisma.album.upsert({
           where: { spotifyId: albumData.spotifyId },
@@ -54,11 +63,10 @@ export async function getNewReleasesByGenre(): Promise<GenreReleases[]> {
           },
         })
 
-        // If album doesn't have genres, try to fetch full details (limit to avoid rate limits)
+        // If album doesn't have genres, try to fetch full details
         if (!album.genres || album.genres.length === 0) {
           try {
-            // Add a small delay to avoid rate limiting
-            await new Promise((resolve) => setTimeout(resolve, 100))
+            await new Promise((resolve) => setTimeout(resolve, 100)) // Avoid rate limits
             const fullAlbum = await getSpotifyAlbum(albumData.spotifyId)
             if (fullAlbum.genres && fullAlbum.genres.length > 0) {
               await prisma.album.update({
@@ -68,7 +76,6 @@ export async function getNewReleasesByGenre(): Promise<GenreReleases[]> {
               album.genres = fullAlbum.genres
             }
           } catch (error) {
-            // Silently fail - we'll use artist-based genre inference as fallback
             console.error(`Error fetching genres for album ${album.id}:`, error)
           }
         }
@@ -93,8 +100,6 @@ export async function getNewReleasesByGenre(): Promise<GenreReleases[]> {
           genreMap.get(normalizedGenre)!.push(album)
         })
       } else {
-        // If no genre, try to infer from artist name or add to "other"
-        // For now, just add to "other" category
         if (!genreMap.has("other")) {
           genreMap.set("other", [])
         }
@@ -105,19 +110,17 @@ export async function getNewReleasesByGenre(): Promise<GenreReleases[]> {
     // Convert to array and prioritize popular genres
     const genreReleases: GenreReleases[] = []
 
-    // First, add popular genres in order
     POPULAR_GENRES.forEach((genre) => {
       const albums = genreMap.get(genre)
       if (albums && albums.length > 0) {
         genreReleases.push({
           genre: genre.charAt(0).toUpperCase() + genre.slice(1),
-          albums: albums.slice(0, 10), // Limit to 10 albums per genre
+          albums: albums.slice(0, 10),
         })
         genreMap.delete(genre)
       }
     })
 
-    // Then add remaining genres
     genreMap.forEach((albums, genre) => {
       if (albums.length > 0) {
         genreReleases.push({
@@ -127,7 +130,6 @@ export async function getNewReleasesByGenre(): Promise<GenreReleases[]> {
       }
     })
 
-    // Sort by number of albums (descending) and limit to top 6 genres
     return genreReleases
       .sort((a, b) => b.albums.length - a.albums.length)
       .slice(0, 6)
@@ -136,4 +138,3 @@ export async function getNewReleasesByGenre(): Promise<GenreReleases[]> {
     return []
   }
 }
-
