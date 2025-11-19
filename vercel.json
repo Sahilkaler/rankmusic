@@ -1,9 +1,0 @@
-{
-    "installCommand": "npm install --include=dev",
-    "buildCommand": "npm run build",
-    "env": {
-      "PRISMA_ENABLE_POSTINSTALL_SCRIPT": "true",
-      "ENABLE_VC_BUILD": "1"
-    }
-  }
-  
