@@ -2,7 +2,7 @@
 
 import { useSession, signOut } from "next-auth/react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, usePathname } from "next/navigation"
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,7 +20,12 @@ import { Search, User, LogOut, Home, Music } from "lucide-react"
 export default function Navbar() {
   const { data: session } = useSession()
   const router = useRouter()
+  const pathname = usePathname()
   const [searchQuery, setSearchQuery] = useState("")
+
+  if (pathname?.startsWith("/auth")) {
+    return null
+  }
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault()

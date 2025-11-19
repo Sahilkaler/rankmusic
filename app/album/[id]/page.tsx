@@ -7,6 +7,7 @@ import RatingButtons from "@/components/RatingButtons"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import RatingChart from "@/components/RatingChart"
 import { RATING_COLORS } from "@/lib/ratings"
+import Link from "next/link"
 
 async function getAlbum(id: string, userId?: string) {
   try {
@@ -206,7 +207,13 @@ export default async function AlbumPage({
                     )}
                     <div className="flex-1">
                       <p className="text-sm">
-                        <span className="font-semibold">{rating.user.username}</span> rated this as{" "}
+                        <Link
+                          href={`/profile/${rating.user.username}`}
+                          className="font-semibold text-primary hover:text-[hsl(var(--primary-hover))]"
+                        >
+                          {rating.user.username}
+                        </Link>{" "}
+                        rated this as{" "}
                         <span
                           className="font-semibold"
                           style={{

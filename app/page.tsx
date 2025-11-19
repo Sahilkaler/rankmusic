@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import AlbumCard from "@/components/AlbumCard"
+import Link from "next/link"
 
 async function getTrendingAlbums() {
   try {
@@ -118,9 +119,12 @@ export default async function HomePage() {
                 </div>
                 <div className="flex-1">
                   <p className="text-sm">
-                    <span className="font-semibold">
+                    <Link
+                      href={`/profile/${rating.user.username || rating.user.id}`}
+                      className="font-semibold text-primary hover:text-[hsl(var(--primary-hover))]"
+                    >
                       {rating.user.name || rating.user.username}
-                    </span>{" "}
+                    </Link>{" "}
                     rated{" "}
                     <span className="font-semibold">{rating.album.title}</span> by{" "}
                     <span className="font-semibold">{rating.album.artist}</span> as{" "}
