@@ -26,8 +26,8 @@ model User {
   accounts  Account[]
   sessions  Session[]
   ratings   Rating[]
-  followers Follow[] @relation("UserFollowers")
-  following Follow[] @relation("UserFollowing")
+  followers Follow[] @relation("UserFollowing")
+  following Follow[] @relation("UserFollowers")
 
   @@map("users")
 }

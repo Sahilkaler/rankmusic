@@ -3,6 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import AlbumCard from "@/components/AlbumCard"
 import Link from "next/link"
+import { ensureAlbumsArtwork } from "@/lib/album-service"
 
 async function getTrendingAlbums() {
   try {
@@ -27,7 +28,9 @@ async function getTrendingAlbums() {
       take: 20,
     })
 
-    return trendingAlbums
+    const albumsWithArtwork = await ensureAlbumsArtwork(trendingAlbums)
+
+    return albumsWithArtwork
       .map((album) => ({
         ...album,
         recentRatingCount: album.ratings.length,

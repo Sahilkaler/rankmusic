@@ -62,6 +62,8 @@ export default function FollowButton({ userId, username }: FollowButtonProps) {
         })
         setIsFollowing(true)
       }
+      // Refresh the page to update follower/following counts
+      router.refresh()
     } catch (error) {
       console.error("Error updating follow:", error)
     } finally {
