@@ -1,8 +1,8 @@
 export const RATING_COLORS = {
-  SKIP: "#ef4444",
-  TIMEPASS: "#f59e0b",
-  GOOD: "#3b82f6",
-  PERFECTION: "#10b981",
+  SKIP: "#e22134", // Red
+  TIMEPASS: "#fbbf24", // Yellow/Amber
+  GOOD: "#3b82f6", // Blue
+  PERFECTION: "#1DB954", // Spotify Green
 } as const
 
 export type RatingLabel = keyof typeof RATING_COLORS

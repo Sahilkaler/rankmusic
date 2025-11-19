@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma"
 import AlbumCard from "@/components/AlbumCard"
 import Link from "next/link"
 import { ensureAlbumsArtwork } from "@/lib/album-service"
+import { getNewReleasesByGenre } from "@/lib/genre-releases"
 
 async function getTrendingAlbums() {
   try {
@@ -68,18 +69,21 @@ export default async function HomePage() {
   const session = await getServerSession(authOptions)
   const trendingAlbums = await getTrendingAlbums()
   const recentRatings = await getRecentRatings()
+  const genreReleases = await getNewReleasesByGenre()
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Welcome to Music Rank</h1>
-        <p className="text-muted-foreground">
+    <div className="container mx-auto px-6 py-8">
+      <div className="mb-12">
+        <h1 className="text-5xl font-black mb-3 bg-gradient-to-r from-foreground to-primary bg-clip-text text-transparent">
+          Welcome to Music Rank
+        </h1>
+        <p className="text-muted-foreground text-lg">
           Rate and discover your favorite music albums
         </p>
       </div>
 
-      <section className="mb-12">
-        <h2 className="text-2xl font-semibold mb-4">Trending Albums</h2>
+      <section className="mb-16">
+        <h2 className="text-3xl font-bold mb-6">Trending Albums</h2>
         {trendingAlbums.length > 0 ? (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {trendingAlbums.map((album: any) => (
@@ -98,8 +102,33 @@ export default async function HomePage() {
         )}
       </section>
 
+      {genreReleases.length > 0 && (
+        <>
+          {genreReleases.map((genreSection) => (
+            <section key={genreSection.genre} className="mb-16">
+              <h2 className="text-3xl font-bold mb-6">
+                New {genreSection.genre} Releases
+              </h2>
+              {genreSection.albums.length > 0 ? (
+                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                  {genreSection.albums.map((album: any) => (
+                    <AlbumCard
+                      key={album.id}
+                      id={album.id}
+                      title={album.title}
+                      artist={album.artist}
+                      coverUrl={album.coverUrl}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          ))}
+        </>
+      )}
+
       <section>
-        <h2 className="text-2xl font-semibold mb-4">Recent Ratings</h2>
+        <h2 className="text-3xl font-bold mb-6">Recent Ratings</h2>
         {recentRatings.length > 0 ? (
           <div className="space-y-4">
             {recentRatings.map((rating: any) => (

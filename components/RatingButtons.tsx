@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Trash2, Meh, ThumbsUp, Star } from "lucide-react"
 import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
+import { RATING_COLORS } from "@/lib/ratings"
 
 interface RatingButtonsProps {
   albumId: string
@@ -106,9 +107,17 @@ export default function RatingButtons({
   }
 
   return (
-    <div className="flex gap-2 flex-wrap">
+    <div className="flex gap-3 flex-wrap">
       <Button
-        variant={currentRating === "SKIP" ? "default" : "outline"}
+        className={`rounded-full px-6 py-2 font-semibold transition-all duration-200 hover:scale-105 active:scale-95 ${
+          currentRating === "SKIP"
+            ? "text-white"
+            : "bg-transparent border-2 text-white hover:bg-white/10"
+        }`}
+        style={{
+          backgroundColor: currentRating === "SKIP" ? RATING_COLORS.SKIP : "transparent",
+          borderColor: currentRating === "SKIP" ? RATING_COLORS.SKIP : RATING_COLORS.SKIP,
+        }}
         onClick={() => handleRating("SKIP")}
         disabled={isLoading}
       >
@@ -116,7 +125,15 @@ export default function RatingButtons({
         Skip
       </Button>
       <Button
-        variant={currentRating === "TIMEPASS" ? "default" : "outline"}
+        className={`rounded-full px-6 py-2 font-semibold transition-all duration-200 hover:scale-105 active:scale-95 ${
+          currentRating === "TIMEPASS"
+            ? "text-white"
+            : "bg-transparent border-2 text-white hover:bg-white/10"
+        }`}
+        style={{
+          backgroundColor: currentRating === "TIMEPASS" ? RATING_COLORS.TIMEPASS : "transparent",
+          borderColor: currentRating === "TIMEPASS" ? RATING_COLORS.TIMEPASS : RATING_COLORS.TIMEPASS,
+        }}
         onClick={() => handleRating("TIMEPASS")}
         disabled={isLoading}
       >
@@ -124,7 +141,15 @@ export default function RatingButtons({
         Timepass
       </Button>
       <Button
-        variant={currentRating === "GOOD" ? "default" : "outline"}
+        className={`rounded-full px-6 py-2 font-semibold transition-all duration-200 hover:scale-105 active:scale-95 ${
+          currentRating === "GOOD"
+            ? "text-white"
+            : "bg-transparent border-2 text-white hover:bg-white/10"
+        }`}
+        style={{
+          backgroundColor: currentRating === "GOOD" ? RATING_COLORS.GOOD : "transparent",
+          borderColor: currentRating === "GOOD" ? RATING_COLORS.GOOD : RATING_COLORS.GOOD,
+        }}
         onClick={() => handleRating("GOOD")}
         disabled={isLoading}
       >
@@ -132,7 +157,15 @@ export default function RatingButtons({
         Good
       </Button>
       <Button
-        variant={currentRating === "PERFECTION" ? "default" : "outline"}
+        className={`rounded-full px-6 py-2 font-semibold transition-all duration-200 hover:scale-105 active:scale-95 ${
+          currentRating === "PERFECTION"
+            ? "text-white"
+            : "bg-transparent border-2 text-white hover:bg-white/10"
+        }`}
+        style={{
+          backgroundColor: currentRating === "PERFECTION" ? RATING_COLORS.PERFECTION : "transparent",
+          borderColor: currentRating === "PERFECTION" ? RATING_COLORS.PERFECTION : RATING_COLORS.PERFECTION,
+        }}
         onClick={() => handleRating("PERFECTION")}
         disabled={isLoading}
       >
@@ -143,6 +176,7 @@ export default function RatingButtons({
         <Button
           variant="ghost"
           size="sm"
+          className="rounded-full text-muted-foreground hover:text-foreground"
           onClick={handleRemoveRating}
           disabled={isLoading}
         >

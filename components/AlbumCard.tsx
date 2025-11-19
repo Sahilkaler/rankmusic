@@ -19,32 +19,32 @@ export default function AlbumCard({
 }: AlbumCardProps) {
   return (
     <Link href={`/album/${id}`}>
-      <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer">
-        <div className="aspect-square relative bg-muted">
+      <div className="group bg-card rounded-lg p-4 transition-all duration-200 hover:bg-card/80 cursor-pointer">
+        <div className="aspect-square relative bg-muted rounded-lg overflow-hidden mb-4 shadow-lg group-hover:shadow-xl transition-shadow">
           {coverUrl ? (
             <Image
               src={coverUrl}
               alt={`${title} by ${artist}`}
               fill
-              className="object-cover"
+              className="object-cover group-hover:scale-105 transition-transform duration-300"
               sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-muted-foreground">
+            <div className="w-full h-full flex items-center justify-center text-muted-foreground bg-gradient-to-br from-muted to-muted/50">
               <span className="text-4xl">🎵</span>
             </div>
           )}
         </div>
-        <CardContent className="p-4">
-          <h3 className="font-semibold truncate">{title}</h3>
+        <div>
+          <h3 className="font-bold truncate mb-1 group-hover:text-primary transition-colors">{title}</h3>
           <p className="text-sm text-muted-foreground truncate">{artist}</p>
           {ratingCount !== undefined && (
-            <p className="text-xs text-muted-foreground mt-1">
+            <p className="text-xs text-muted-foreground mt-2">
               {ratingCount} rating{ratingCount !== 1 ? "s" : ""}
             </p>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </Link>
   )
 }
