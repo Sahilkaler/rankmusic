@@ -2,7 +2,7 @@ import type { Metadata } from "next"
 import { Inter } from "next/font/google"
 import "./globals.css"
 import { Providers } from "./providers"
-import Navbar from "@/components/Navbar"
+import { ConditionalNavbar } from "@/components/ConditionalNavbar"
 
 const inter = Inter({ subsets: ["latin"] })
 
@@ -20,7 +20,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={inter.className}>
         <Providers>
-          <Navbar />
+          <ConditionalNavbar />
           <main className="min-h-screen bg-background">
             {children}
           </main>
@@ -29,5 +29,3 @@ export default function RootLayout({
     </html>
   )
 }
-
-
