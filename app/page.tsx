@@ -3,8 +3,7 @@ import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
 import AlbumCard from "@/components/AlbumCard"
 import Link from "next/link"
-import { ensureAlbumsArtwork } from "@/lib/album-service"
-import { getNewReleasesByGenre } from "@/lib/genre-releases"
+import { getNewReleasesByGenre, getLatestReleasesFromDB } from "@/lib/genre-releases"
 
 async function getTrendingAlbums() {
   try {
@@ -29,15 +28,14 @@ async function getTrendingAlbums() {
       take: 20,
     })
 
-    const albumsWithArtwork = await ensureAlbumsArtwork(trendingAlbums)
-
-    return albumsWithArtwork
+    return trendingAlbums
       .map((album) => ({
         ...album,
         recentRatingCount: album.ratings.length,
       }))
       .sort((a, b) => b.recentRatingCount - a.recentRatingCount)
-  } catch {
+  } catch (error) {
+    console.error("Error fetching trending albums:", error)
     return []
   }
 }
@@ -60,8 +58,32 @@ async function getRecentRatings() {
       },
     })
     return ratings
-  } catch {
+  } catch (error) {
+    console.error("Error fetching recent ratings:", error)
     return []
+  }
+}
+
+async function getLatestReleases() {
+  try {
+    // First try to get fresh releases from Spotify
+    const genreReleases = await getNewReleasesByGenre()
+    
+    if (genreReleases.length > 0 && genreReleases[0].albums.length > 0) {
+      return genreReleases[0].albums
+    }
+    
+    // Fallback to database
+    const dbAlbums = await getLatestReleasesFromDB()
+    return dbAlbums
+  } catch (error) {
+    console.error("Error fetching latest releases:", error)
+    // Final fallback to database
+    try {
+      return await getLatestReleasesFromDB()
+    } catch {
+      return []
+    }
   }
 }
 
@@ -69,7 +91,7 @@ export default async function HomePage() {
   const session = await getServerSession(authOptions)
   const trendingAlbums = await getTrendingAlbums()
   const recentRatings = await getRecentRatings()
-  const genreReleases = await getNewReleasesByGenre()
+  const latestReleases = await getLatestReleases()
 
   return (
     <div className="container mx-auto px-6 py-8">
@@ -82,6 +104,7 @@ export default async function HomePage() {
         </p>
       </div>
 
+      {/* Trending Albums Section */}
       <section className="mb-16">
         <h2 className="text-3xl font-bold mb-6">Trending Albums</h2>
         {trendingAlbums.length > 0 ? (
@@ -98,35 +121,40 @@ export default async function HomePage() {
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground">No trending albums yet. Start rating!</p>
+          <div className="text-center py-12 bg-card rounded-lg">
+            <p className="text-muted-foreground mb-4">No trending albums yet.</p>
+            <Link href="/search" className="text-primary hover:underline">
+              Search and rate some albums to get started!
+            </Link>
+          </div>
         )}
       </section>
 
-      {genreReleases.length > 0 && (
-        <>
-          {genreReleases.map((genreSection) => (
-            <section key={genreSection.genre} className="mb-16">
-              <h2 className="text-3xl font-bold mb-6">
-                New {genreSection.genre} Releases
-              </h2>
-              {genreSection.albums.length > 0 ? (
-                <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                  {genreSection.albums.map((album: any) => (
-                    <AlbumCard
-                      key={album.id}
-                      id={album.id}
-                      title={album.title}
-                      artist={album.artist}
-                      coverUrl={album.coverUrl}
-                    />
-                  ))}
-                </div>
-              ) : null}
-            </section>
-          ))}
-        </>
-      )}
+      {/* Latest Releases Section */}
+      <section className="mb-16">
+        <h2 className="text-3xl font-bold mb-6">Latest Releases</h2>
+        {latestReleases.length > 0 ? (
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {latestReleases.map((album: any) => (
+              <AlbumCard
+                key={album.id}
+                id={album.id}
+                title={album.title}
+                artist={album.artist}
+                coverUrl={album.coverUrl}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-12 bg-card rounded-lg">
+            <p className="text-muted-foreground">
+              No releases to show. Search for albums to add them to your collection!
+            </p>
+          </div>
+        )}
+      </section>
 
+      {/* Recent Ratings Section */}
       <section>
         <h2 className="text-3xl font-bold mb-6">Recent Ratings</h2>
         {recentRatings.length > 0 ? (
@@ -145,7 +173,7 @@ export default async function HomePage() {
                     />
                   ) : (
                     <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                      {(rating.user.name || rating.user.username)?.charAt(0)}
+                      {(rating.user.name || rating.user.username)?.charAt(0).toUpperCase()}
                     </div>
                   )}
                 </div>
@@ -153,14 +181,28 @@ export default async function HomePage() {
                   <p className="text-sm">
                     <Link
                       href={`/profile/${rating.user.username || rating.user.id}`}
-                      className="font-semibold text-primary hover:text-[hsl(var(--primary-hover))]"
+                      className="font-semibold text-primary hover:underline"
                     >
                       {rating.user.name || rating.user.username}
                     </Link>{" "}
                     rated{" "}
-                    <span className="font-semibold">{rating.album.title}</span> by{" "}
-                    <span className="font-semibold">{rating.album.artist}</span> as{" "}
-                    <span className="font-semibold text-primary">{rating.rating}</span>
+                    <Link
+                      href={`/album/${rating.album.id}`}
+                      className="font-semibold hover:text-primary"
+                    >
+                      {rating.album.title}
+                    </Link>{" "}
+                    by{" "}
+                    <span className="text-muted-foreground">{rating.album.artist}</span>{" "}
+                    as{" "}
+                    <span className={`font-semibold ${
+                      rating.rating === 'PERFECTION' ? 'text-green-500' :
+                      rating.rating === 'GOOD' ? 'text-blue-500' :
+                      rating.rating === 'TIMEPASS' ? 'text-yellow-500' :
+                      'text-red-500'
+                    }`}>
+                      {rating.rating}
+                    </span>
                   </p>
                   <p className="text-xs text-muted-foreground">
                     {new Date(rating.createdAt).toLocaleDateString()}
@@ -170,10 +212,11 @@ export default async function HomePage() {
             ))}
           </div>
         ) : (
-          <p className="text-muted-foreground">No recent ratings yet.</p>
+          <div className="text-center py-12 bg-card rounded-lg">
+            <p className="text-muted-foreground">No ratings yet. Be the first to rate an album!</p>
+          </div>
         )}
       </section>
     </div>
   )
 }
-

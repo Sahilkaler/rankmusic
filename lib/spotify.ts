@@ -8,11 +8,17 @@ interface SpotifyTokenResponse {
   expires_in: number
 }
 
+interface SpotifyImage {
+  url: string
+  height?: number
+  width?: number
+}
+
 interface SpotifyAlbum {
   id: string
   name: string
   artists: Array<{ name: string }>
-  images: Array<{ url: string }>
+  images: SpotifyImage[]
   release_date: string
   genres?: string[]
 }
@@ -25,6 +31,24 @@ interface SpotifySearchResponse {
 
 // Cache token for reuse
 let cachedToken: { token: string; expiresAt: number } | null = null
+
+// ---------------------------------------------------------
+// HELPER: Get best album image
+// ---------------------------------------------------------
+
+function getBestImage(images: SpotifyImage[]): string | null {
+  if (!images || images.length === 0) return null
+  
+  // Sort by size (largest first) and return the first one
+  // Spotify usually returns images in order: 640x640, 300x300, 64x64
+  const sorted = [...images].sort((a, b) => {
+    const aSize = (a.height || 0) * (a.width || 0)
+    const bSize = (b.height || 0) * (b.width || 0)
+    return bSize - aSize
+  })
+  
+  return sorted[0]?.url || images[0]?.url || null
+}
 
 // ---------------------------------------------------------
 // GET ACCESS TOKEN (Vercel-safe, NO Buffer)
@@ -96,14 +120,16 @@ export async function searchSpotifyAlbums(query: string, limit: number = 20) {
 
   const data: SpotifySearchResponse = await response.json()
 
-  return data.albums.items.map((album) => ({
-    spotifyId: album.id,
-    title: album.name,
-    artist: album.artists.map((a) => a.name).join(", "),
-    releaseDate: album.release_date,
-    coverUrl: album.images[0]?.url || null,
-    genres: [], // Search API does not provide genres
-  }))
+  return data.albums.items
+    .filter((album) => album && album.id) // Filter out any null/invalid items
+    .map((album) => ({
+      spotifyId: album.id,
+      title: album.name || "Unknown Album",
+      artist: album.artists?.map((a) => a.name).join(", ") || "Unknown Artist",
+      releaseDate: album.release_date || null,
+      coverUrl: getBestImage(album.images),
+      genres: [],
+    }))
 }
 
 // ---------------------------------------------------------
@@ -130,10 +156,10 @@ export async function getSpotifyAlbum(spotifyId: string) {
 
   return {
     spotifyId: album.id,
-    title: album.name,
-    artist: album.artists.map((a) => a.name).join(", "),
-    releaseDate: album.release_date,
-    coverUrl: album.images[0]?.url || null,
+    title: album.name || "Unknown Album",
+    artist: album.artists?.map((a) => a.name).join(", ") || "Unknown Artist",
+    releaseDate: album.release_date || null,
+    coverUrl: getBestImage(album.images),
     genres: album.genres || [],
   }
 }
@@ -163,12 +189,19 @@ export async function getNewReleases(limit: number = 50) {
 
   const data = await response.json()
 
-  return data.albums.items.map((album: SpotifyAlbum) => ({
-    spotifyId: album.id,
-    title: album.name,
-    artist: album.artists.map((a) => a.name).join(", "),
-    releaseDate: album.release_date,
-    coverUrl: album.images[0]?.url || null,
-    genres: [], // Spotify new releases API also does NOT include genres
-  }))
+  if (!data.albums?.items) {
+    console.error("Spotify new releases: No albums in response")
+    return []
+  }
+
+  return data.albums.items
+    .filter((album: SpotifyAlbum) => album && album.id)
+    .map((album: SpotifyAlbum) => ({
+      spotifyId: album.id,
+      title: album.name || "Unknown Album",
+      artist: album.artists?.map((a) => a.name).join(", ") || "Unknown Artist",
+      releaseDate: album.release_date || null,
+      coverUrl: getBestImage(album.images),
+      genres: [],
+    }))
 }

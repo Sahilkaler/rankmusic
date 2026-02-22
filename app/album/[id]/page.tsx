@@ -1,5 +1,4 @@
 import { notFound } from "next/navigation"
-import Image from "next/image"
 import { getServerSession } from "next-auth"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/prisma"
@@ -8,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import RatingChart from "@/components/RatingChart"
 import { RATING_COLORS } from "@/lib/ratings"
 import Link from "next/link"
+import AlbumCover from "@/components/AlbumCover"
 
 async function getAlbum(id: string, userId?: string) {
   try {
@@ -30,7 +30,6 @@ async function getAlbum(id: string, userId?: string) {
 
     if (!album) return null
 
-    // Calculate rating statistics
     const ratingCounts = {
       SKIP: 0,
       TIMEPASS: 0,
@@ -50,7 +49,6 @@ async function getAlbum(id: string, userId?: string) {
         }, 0) / totalRatings
       : 0
 
-    // Get user's rating if logged in
     let userRating = null
     if (userId) {
       const rating = await prisma.rating.findUnique({
@@ -99,21 +97,11 @@ export default async function AlbumPage({
     <div className="container mx-auto px-4 py-8">
       <div className="grid md:grid-cols-2 gap-8">
         <div>
-          {album.coverUrl ? (
-            <div className="aspect-square relative rounded-lg overflow-hidden">
-              <Image
-                src={album.coverUrl}
-                alt={`${album.title} by ${album.artist}`}
-                fill
-                className="object-cover"
-                sizes="(max-width: 768px) 100vw, 50vw"
-              />
-            </div>
-          ) : (
-            <div className="aspect-square bg-muted rounded-lg flex items-center justify-center">
-              <span className="text-8xl">🎵</span>
-            </div>
-          )}
+          <AlbumCover
+            coverUrl={album.coverUrl}
+            title={album.title}
+            artist={album.artist}
+          />
         </div>
 
         <div className="space-y-6">
@@ -167,7 +155,7 @@ export default async function AlbumPage({
                               className="h-2 rounded-full"
                               style={{
                                 width: `${(count / album.totalRatings) * 100}%`,
-                            backgroundColor: RATING_COLORS[rating as keyof typeof RATING_COLORS],
+                                backgroundColor: RATING_COLORS[rating as keyof typeof RATING_COLORS],
                               }}
                             />
                           </div>
@@ -177,7 +165,7 @@ export default async function AlbumPage({
                     </div>
                   </div>
                   {chartData.length > 0 && (
-                <RatingChart data={chartData} />
+                    <RatingChart data={chartData} />
                   )}
                 </div>
               </CardContent>
@@ -202,14 +190,14 @@ export default async function AlbumPage({
                       />
                     ) : (
                       <div className="w-10 h-10 rounded-full bg-muted flex items-center justify-center">
-                        {rating.user.username.charAt(0)}
+                        {rating.user.username?.charAt(0).toUpperCase()}
                       </div>
                     )}
                     <div className="flex-1">
                       <p className="text-sm">
                         <Link
                           href={`/profile/${rating.user.username}`}
-                          className="font-semibold text-primary hover:text-[hsl(var(--primary-hover))]"
+                          className="font-semibold text-primary hover:underline"
                         >
                           {rating.user.username}
                         </Link>{" "}
@@ -237,4 +225,3 @@ export default async function AlbumPage({
     </div>
   )
 }
-

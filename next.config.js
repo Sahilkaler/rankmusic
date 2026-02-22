@@ -1,17 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: [
-      'i.scdn.co',
-      'mosaic.scdn.co',
-      'misc.scdn.co',
-      'seed-mix-image.spotifycdn.com',
-      'image-cdn-ak.spotifycdn.com',
-      'media.giphy.com',
-      'lh3.googleusercontent.com',
-      'avatars.githubusercontent.com',
-    ],
     remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: '**.scdn.co',
+      },
+      {
+        protocol: 'https',
+        hostname: '**.spotifycdn.com',
+      },
       {
         protocol: 'https',
         hostname: 'i.scdn.co',
@@ -22,11 +20,51 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '**.scdn.co',
+        hostname: 'misc.scdn.co',
       },
       {
         protocol: 'https',
-        hostname: '**.spotifycdn.com',
+        hostname: 'blend-playlist-covers.spotifycdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'daily-mix.scdn.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'newjams-images.scdn.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'charts-images.scdn.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'thisis-images.scdn.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'wrapped-images.spotifycdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'seeded-session-images.scdn.co',
+      },
+      {
+        protocol: 'https',
+        hostname: 'seed-mix-image.spotifycdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'image-cdn-ak.spotifycdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'image-cdn-fa.spotifycdn.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'lineup-images.scdn.co',
       },
       {
         protocol: 'https',
@@ -41,5 +79,3 @@ const nextConfig = {
 }
 
 module.exports = nextConfig
-
-
